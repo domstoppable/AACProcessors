@@ -6,7 +6,7 @@
 [![Coverage](https://codecov.io/gh/willwade/AACProcessors/branch/main/graph/badge.svg)](https://codecov.io/gh/willwade/AACProcessors)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-A Python library to read, import, export and modify pagesets from different AAC (Augmentative and Alternative Communication) providers. Currently supports:
+A Python library to read, import, export and modify pagesets from different AAC (Augmentative and Alternative Communication) providers. NB: Node/JS version at https://github.com/willwade/AACProcessors-nodejs and probably more coverage now.  Currently supports:
 
 - Grid 3 (`.gridset`)
 - CoughDrop (OpenBoard) (`.obf`, `.obz`)
