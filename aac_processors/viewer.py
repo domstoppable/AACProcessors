@@ -75,6 +75,9 @@ def print_button(
 
     if hasattr(button, "vocalization") and button.vocalization:
         print(f"{indent_str}  └─ Says: {button.vocalization}")
+    if button.sound:
+        sound_info = button.sound.local_path or button.sound.url or button.sound.label or "[embedded]"
+        print(f"{indent_str}  └─ Sound: {sound_info}")
     if button.target_page_id:
         if visited_pages and button.target_page_id in visited_pages:
             print(f"{indent_str}  └─ Goes to: {button.target_page_id} (circular)")
