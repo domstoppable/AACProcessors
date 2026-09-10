@@ -7,7 +7,7 @@ from lxml import etree
 from lxml.etree import _Element, _ElementTree
 
 from .file_processor import FileProcessor
-from .tree_structure import AACButton, AACPage, AACTree, ButtonType
+from .tree_structure import AACButton, AACPage, AACSound, AACTree, ButtonType
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -505,6 +505,16 @@ class GridsetProcessor(FileProcessor):
                                 vocalization=caption.text.strip(),
                             )
 
+                            # Check for audio description (sound)
+                            audio_desc = content.find(".//CaptionAndImage/AudioDescription")
+                            if audio_desc is not None and audio_desc.text:
+                                audio_path = audio_desc.text.strip()
+                                button.sound = AACSound(
+                                    local_path=audio_path,
+                                    system_name="grid3",
+                                    label=audio_path,
+                                )
+
                             # Check for navigation
                             commands = content.findall(".//Commands/Command")
                             for command in commands:
@@ -611,6 +621,16 @@ class GridsetProcessor(FileProcessor):
                 caption_and_image = etree.SubElement(content, "CaptionAndImage")
                 caption = etree.SubElement(caption_and_image, "Caption")
                 caption.text = button.label
+
+                # Add audio description if sound is present
+                if button.sound:
+                    audio_desc = etree.SubElement(caption_and_image, "AudioDescription")
+                    if button.sound.local_path:
+                        audio_desc.text = button.sound.local_path
+                    elif button.sound.url:
+                        audio_desc.text = button.sound.url
+                    elif button.sound.data:
+                        audio_desc.text = button.sound.data_url or ""
 
                 if button.type == ButtonType.NAVIGATE:
                     commands = etree.SubElement(content, "Commands")

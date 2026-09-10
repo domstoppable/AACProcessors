@@ -122,6 +122,88 @@ class AACSymbol:
 
 
 @dataclass
+class AACSound:
+    """Represents a sound or audio clip used in an AAC button.
+
+    Like AACSymbol, this class provides a unified way to reference sounds
+    across different AAC systems. Sounds can be referenced via:
+
+    1. Direct References:
+       - Local file path
+       - Web URL
+       - Base64 data (OBF)
+
+    The class doesn't store actual audio data, only references. Audio resolution
+    is handled by the specific processor implementations.
+    """
+    # System-specific IDs
+    system_id: Optional[str] = None    # ID used by source system
+    system_name: Optional[str] = None  # Name of source system
+    internal_id: Optional[str] = None  # Internal ID for cross-referencing
+
+    # Direct References
+    local_path: Optional[str] = None   # Path to local file
+    url: Optional[str] = None          # URL to remote file
+    data: Optional[str] = None         # Base64 encoded data
+    content_type: Optional[str] = None # MIME type of the audio (e.g., "audio/wav")
+
+    # Metadata
+    format: Optional[str] = None       # File format (e.g., "wav", "mp3")
+    label: Optional[str] = None        # Display name/label
+
+    def __post_init__(self):
+        """Set internal_id if not provided and infer content_type if possible."""
+        if not self.internal_id:
+            self.internal_id = self.system_id or f"{self.system_name}_sound"
+
+        # Infer content_type from format if not set
+        if not self.content_type and self.format:
+            format_to_mime = {
+                'wav': 'audio/wav',
+                'mp3': 'audio/mpeg',
+                'ogg': 'audio/ogg',
+                'aac': 'audio/aac',
+                'm4a': 'audio/mp4',
+                'flac': 'audio/flac',
+            }
+            self.content_type = format_to_mime.get(self.format.lower(), 'audio/wav')
+
+    @property
+    def data_url(self) -> Optional[str]:
+        """Get data URL if data is present."""
+        if self.data:
+            content_type = self.content_type or 'audio/wav'
+            return f"data:{content_type};base64,{self.data}"
+        return None
+
+    @classmethod
+    def from_data_url(cls, data_url: str, internal_id: Optional[str] = None) -> 'AACSound':
+        """Create sound from data URL.
+
+        Args:
+            data_url: Data URL string
+            internal_id: Optional internal ID
+
+        Returns:
+            New AACSound instance
+        """
+        try:
+            # Parse data URL format: data:[<media type>][;base64],<data>
+            header, data = data_url.split(',', 1)
+            content_type = None
+            if header.startswith('data:'):
+                content_type = header[5:].split(';')[0] or None
+
+            return cls(
+                data=data,
+                content_type=content_type,
+                internal_id=internal_id
+            )
+        except Exception:
+            return cls(internal_id=internal_id)
+
+
+@dataclass
 class AACButton:
     """Button in an AAC system."""
 
@@ -134,6 +216,7 @@ class AACButton:
     vocalization: Optional[str] = None
     action: Optional[str] = None
     image: Optional[dict[str, Any]] = None
+    sound: Optional[AACSound] = None
     style: ButtonStyle = field(default_factory=ButtonStyle)
     # Dimensions as percentage of page (0.0-1.0)
     width: float = 0.1  # Default 10% of page width

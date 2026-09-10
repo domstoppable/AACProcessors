@@ -7,7 +7,7 @@ from .gridset_processor import GridsetProcessor
 from .opml_processor import OPMLProcessor
 from .snap_processor import SnapProcessor
 from .touchchat_processor import TouchChatProcessor
-from .tree_structure import AACButton, AACPage, AACTree, ButtonType
+from .tree_structure import AACButton, AACPage, AACSound, AACTree, ButtonType
 
 if TYPE_CHECKING:
     from .optional.screenshot_processor import ScreenshotProcessor
@@ -22,6 +22,7 @@ __all__ = [
     "AACTree",
     "AACPage",
     "AACButton",
+    "AACSound",
     "ButtonType",
     "viewer",
     "ScreenshotProcessor",
