@@ -40,12 +40,19 @@ class CoughDropProcessor(FileProcessor):
         """
         self.save_from_tree(tree, output_path)
 
-    def _load_board_into_tree(self, file_path: str, tree: AACTree) -> None:
+    def _load_board_into_tree(
+        self,
+        file_path: str,
+        tree: AACTree,
+        board_path_to_id: Optional[dict[str, str]] = None,
+    ) -> None:
         """Load board data into tree structure.
 
         Args:
             file_path: Path to the OBF file to load
             tree: Tree to add the board to
+            board_path_to_id: Optional mapping from board path to board ID,
+                used to resolve navigation targets when load_board has no id.
         """
         try:
             # Load and parse the JSON file first
@@ -80,10 +87,14 @@ class CoughDropProcessor(FileProcessor):
 
                 if "load_board" in button:
                     button_type = ButtonType.NAVIGATE
-                    target_page_id = button["load_board"].get("id", "")
-                    # Set parent_id for the target page if it exists
-                    if target_page_id and target_page_id in tree.pages:
-                        tree.pages[target_page_id].parent_id = page.id
+                    load_board = button["load_board"]
+                    target_page_id = load_board.get("id", "")
+                    if not target_page_id:
+                        board_path = load_board.get("path", "")
+
+                        if board_path_to_id and board_path in board_path_to_id:
+                            target_page_id = board_path_to_id[board_path]
+
                 elif "action" in button:
                     button_type = ButtonType.ACTION
                     action = button["action"]
@@ -734,6 +745,9 @@ class CoughDropProcessor(FileProcessor):
                     paths = manifest.get("paths", {})
                     boards = paths.get("boards", {})
 
+                    # Build reverse mapping: board path -> board ID
+                    board_path_to_id = {v: k for k, v in boards.items()}
+
                     # Process each board file
                     for _board_id, board_path in boards.items():
                         if board_path == manifest.get('root'):
@@ -741,10 +755,21 @@ class CoughDropProcessor(FileProcessor):
 
                         full_path = os.path.join(temp_dir, board_path)
                         if os.path.exists(full_path):
-                            self._load_board_into_tree(full_path, tree)
+                            self._load_board_into_tree(full_path, tree, board_path_to_id)
+
             else:
                 # Single OBF file
                 self._load_board_into_tree(file_path, tree)
+
+            # Set parent IDs for navigation after all pages are loaded
+            for page in tree.pages.values():
+                for button in page.buttons:
+                    if (
+                        button.type == ButtonType.NAVIGATE
+                        and button.target_page_id
+                        and button.target_page_id in tree.pages
+                    ):
+                        tree.pages[button.target_page_id].parent_id = page.id
 
             return tree
 
