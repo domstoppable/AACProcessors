@@ -736,6 +736,9 @@ class CoughDropProcessor(FileProcessor):
 
                     # Process each board file
                     for _board_id, board_path in boards.items():
+                        if board_path == manifest.get('root'):
+                            tree.root_id = _board_id
+
                         full_path = os.path.join(temp_dir, board_path)
                         if os.path.exists(full_path):
                             self._load_board_into_tree(full_path, tree)
